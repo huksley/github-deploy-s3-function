@@ -4,18 +4,22 @@
   "description": "Serverless function to deploy GitHub repo when invoked as webhook from GitHub",
   "main": "index.js",
   "dependencies": {
-    "aws-sdk": "^2.623.0",
-    "fetch": "^1.1.0",
-    "serverless": "^1.64.0",
-    "serverless-dotenv-plugin": "^2.3.2",
     "simple-git": "^1.107.0"
   },
   "devDependencies": {
+    "aws-sdk": "^2.623.0",
     "dotenv": "^8.2.0",
-    "prettier": "^1.19.1"
+    "prettier": "^1.19.1",
+    "run-script-os": "^1.0.7",
+    "serverless": "^1.64.0",
+    "serverless-dotenv-plugin": "^2.3.2",
+    "serverless-layers": "^1.5.0"
   },
   "scripts": {
-    "deploy": "serverless deploy"
+    "deploy": "git submodule init && git submodule update --depth 1 && unzip -u -o -q git-lambda-layer/lambda2/layer.zip -d .git-layer && sh ./fix-layer-link.sh && serverless deploy",
+    "deploy-docker": "run-script-os",
+    "deploy-docker:macos": "docker build -t deploy1 . && docker run -ti -v $HOME/.aws:/tmp/home/.aws:ro deploy1",
+    "deploy-docker:linux": "serverless deploy"
   },
   "author": "Ruslan Gainutdinov",
   "license": "MIT"

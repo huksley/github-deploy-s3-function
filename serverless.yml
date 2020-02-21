@@ -1,7 +1,11 @@
 service: github-deploy
 plugins:
   - serverless-dotenv-plugin
-  
+
+layers:
+  git-layer:
+    path: .git-layer
+
 provider:
   name: aws
   runtime: nodejs12.x
@@ -49,12 +53,15 @@ package:
   exclude:
     - "node_modules/aws-sdk/**"
     - "node_modules/aws-lambda/**"
+    - ".git-layer/**"
+    - "git-lambda-layer/**"
 
 functions:
   handlePost:
-    handler: src/index.handler
+    handler: index.handler
     # https://github.com/lambci/git-lambda-layer
-    layers: arn:aws:lambda:eu-west-1:553035198032:layer:git-lambda2:4
+    layers: 
+      - git-layer
     events:
       - http:
           path: receive/
