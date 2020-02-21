@@ -57,7 +57,7 @@ exports.handleEvent = async (event, context) => {
   let user = body.repository.owner.login;
   let token = process.env.GITHUB_TOKEN;
   let repo = body.repository.full_name;
-  const branch = body.ref
+  const branch = body.ref.startsWith("refs/heads/") ? body.ref.split("/")[2] : body.ref
   await githubHelper.getRepo(repo, user, token, targetDir, branch);
   const prefix = process.env.PREFIX || "";
 

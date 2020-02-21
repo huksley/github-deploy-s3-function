@@ -86,13 +86,6 @@ exports.getRepo = async function(repo, user, token, path, branch) {
     ]);
     console.info("Cloned");
     return result;
-  } else {
-    console.info(
-      `Updating https://${user}:xxx@github.com/${repo}.git into ${path}`
-    );
-    const result = git.cwd(path).then(_ => git.pull());
-    console.info("Updated");
-    return result;
   }
 };
 
