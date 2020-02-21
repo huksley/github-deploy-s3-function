@@ -31,18 +31,43 @@ exports.listBucketObjects = async function(bucket) {
 
 exports.uploadToS3 = async function(bucket, dir, prefix, keys) {
   let upload = async function(key) {
-    return new Promise((resolve) => {
-      return fs.readFile(path.join(dir, (prefix ? prefix : ""), key), (err, filedata) => {
-        console.info("Uploading " + dir + "/" + (prefix ? prefix + "/" : "") + key + " " + (filedata ? filedata.length : 0) + " to " + bucket)
-        resolve(s3.putObject({
-            Bucket: bucket,
-            Key: key,
-            Body: filedata,
-            ContentType: mime.lookup(key) || "application/octet-stream",
-            ACL: process.env.AWS_S3_ACL || "public-read"
-          }).promise().then(r => 1))
-      });
-    })
+    return new Promise(resolve => {
+      if (fs.existsSync(dir + "/" + (prefix ? prefix + "/" : "") + key)) {
+        return fs.readFile(
+          path.join(dir, prefix ? prefix : "", key),
+          (err, filedata) => {
+            console.info(
+              "Uploading " +
+                dir +
+                "/" +
+                (prefix ? prefix + "/" : "") +
+                key +
+                " " +
+                (filedata ? filedata.length : 0) +
+                " to " +
+                bucket
+            );
+            resolve(
+              s3
+                .putObject({
+                  Bucket: bucket,
+                  Key: key,
+                  Body: filedata,
+                  ContentType: mime.lookup(key) || "application/octet-stream",
+                  ACL: process.env.AWS_S3_ACL || "public-read"
+                })
+                .promise()
+                .then(r => 1)
+            );
+          }
+        );
+      } else {
+        console.info(
+          "File not found " + dir + "/" + (prefix ? prefix + "/" : "") + key
+        );
+        return Promise.resolve(0);
+      }
+    });
   };
 
   let promises = keys.map(key => {
@@ -64,7 +89,10 @@ exports.deleteFromS3 = async function(bucket, keys) {
       Objects: deleteKeys
     }
   };
-  return s3.deleteObjects(params).promise().then(r => r.Deleted ? r.Deleted.length : 0)
+  return s3
+    .deleteObjects(params)
+    .promise()
+    .then(r => (r.Deleted ? r.Deleted.length : 0));
 };
 
 exports.resetCloudfrontCache = async function(distributionId) {

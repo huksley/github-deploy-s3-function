@@ -1,6 +1,15 @@
 {
+  "ref": "refs/heads/master",
   "after": "1481a2de7b2a7d02428ad93446ab166be7793fbb",
   "before": "17c497ccc7cca9c2f735aa07e9e3813060ce9a6a",
+  "repository": {
+    "full_name": "huksley/makedoc",
+    "owner": {
+      "name": "test",
+      "email": "test@example.com",
+      "login": "test"
+    }
+  },
   "commits": [
     {
       "added": [],

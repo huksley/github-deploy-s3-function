@@ -1,8 +1,10 @@
 const fs = require("fs");
 const path = require("path");
 const { exec } = require("child_process");
+const { promisify } = require("util");
 const githubHelper = require("./github");
 const awsHelper = require("./aws");
+const execP = promisify(exec);
 
 function unique(array) {
   return array.filter((v, i, arr) => i == arr.indexOf(v));
@@ -30,34 +32,36 @@ const getCircularReplacer = () => {
 };
 
 function stripPrefix(prefix, array) {
-  return array.map(file => {
-    if (prefix) {
-      if (file.startsWith(prefix + "/")) {
-        return file.substring(prefix.length + 1)
+  return array
+    .map(file => {
+      if (prefix) {
+        if (file.startsWith(prefix + "/")) {
+          return file.substring(prefix.length + 1);
+        } else {
+          return undefined;
+        }
       } else {
-        return undefined;
+        return file;
       }
-    } else {
-      return file
-    }
-  }).filter(f => f !== undefined)
+    })
+    .filter(f => f !== undefined);
 }
 
 exports.handleEvent = async (event, context) => {
-  let commits = JSON.parse(event.body).commits;
-  let addedFiles = getTypeFromCommits(commits, "added");
-  let modifiedFiles = getTypeFromCommits(commits, "modified");
-  let deletedFiles = getTypeFromCommits(commits, "removed");
-  console.info({ addedFiles, deletedFiles, modifiedFiles });
-  let targetDir = `/tmp/${context.awsRequestId ||
-    "repo" + new Date().getTime()}`;
-  let user = process.env.GITHUB_USER;
+  const body = JSON.parse(event.body);
+  const commits = body.commits;
+  const addedFiles = getTypeFromCommits(commits, "added");
+  const modifiedFiles = getTypeFromCommits(commits, "modified");
+  const deletedFiles = getTypeFromCommits(commits, "removed");
+  const targetDir = `/tmp/git${body.after || "git" + new Date().getTime()}`;
+  let user = body.repository.owner.login;
   let token = process.env.GITHUB_TOKEN;
-  let repo = process.env.GITHUB_REPO;
-  await githubHelper.getRepo(repo, user, token, targetDir);
-  const prefix = process.env.PREFIX || ""
+  let repo = body.repository.full_name;
+  const branch = body.ref
+  await githubHelper.getRepo(repo, user, token, targetDir, branch);
+  const prefix = process.env.PREFIX || "";
 
-  let uploadToS3Keys = stripPrefix(prefix, addedFiles.concat(modifiedFiles))
+  let uploadToS3Keys = stripPrefix(prefix, addedFiles.concat(modifiedFiles));
 
   let uploadResponses = awsHelper.uploadToS3(
     process.env.AWS_S3_BUCKET,
@@ -78,25 +82,33 @@ exports.handleEvent = async (event, context) => {
     cloudFrontResponse = awsHelper.resetCloudfrontCache(distributionId);
   }
 
-  if (process.env.REGEN_PUBLIC_CMD) {
-    let cmd = process.env.REGEN_PUBLIC_CMD;
-    let output = await execP(cmd, { cwd: targetDir });
-    console.info(cmd, output);
-    if (!(await githubHelper.isClean(targetDir))) {
-      await githubHelper.commitAndPushPublic(targetDir);
+  let cmdOutput;
+  if (process.env.AFTER_PUBLISH_CMD) {
+    let cmd = process.env.AFTER_PUBLISH_CMD;
+    cmdOutput = await execP(cmd, { cwd: targetDir });
+    const isClean = await githubHelper.isClean(targetDir);
+    if (!isClean) {
+      await githubHelper.commitAndPush(
+        targetDir,
+        prefix ? prefix : ".",
+        body.repository.owner.email,
+        body.repository.owner.name,
+        branch,
+        process.env.GITHUB_COMMIT_MESSAGE || "Updates"
+      );
     }
   }
 
+  const stats = {
+    upload: await uploadResponses,
+    delete: await deleteResponses,
+    cloudFront: await cloudFrontResponse,
+    cmdOutput
+  };
+
   const response = {
     statusCode: 200,
-    body: JSON.stringify(
-      {
-        upload: await uploadResponses,
-        delete: await deleteResponses,
-        cloudFront: await cloudFrontResponse
-      },
-      getCircularReplacer()
-    )
+    body: JSON.stringify(stats, getCircularReplacer())
   };
 
   return response;

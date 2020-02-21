@@ -20,6 +20,7 @@ class ServerlessExistingLayer {
     const aws = this.serverless.service.provider;
     const template = aws.compiledCloudFormationTemplate;
     const layers = [
+      // https://github.com/lambci/git-lambda-layer
       "arn:aws:lambda:eu-west-1:553035198032:layer:git-lambda2:4"
     ];
     template.Resources.HandlePostLambdaFunction.Properties.Layers = layers;
