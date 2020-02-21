@@ -1,0 +1,62 @@
+service: github-deploy
+plugins:
+  - serverless-dotenv-plugin
+  
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: eu-west-1
+  stage: dev
+  # optional, in MB, default is 1024, min is 128
+  memorySize: 128
+  # optional, in seconds, default is 6
+  timeout: 10
+  # optional, default is true
+  versionFunctions: false
+  environment:
+    AWS_S3_BUCKET: ${env:AWS_S3_BUCKET, "example"}
+    AWS_S3_ACL: ${env:AWS_S3_ACL, "public-read"}
+    GITHUB_USER: ${env:GITHUB_USER}
+    GITHUB_TOKEN: ${env:GITHUB_TOKEN}
+    GITHUB_REPO: ${env:GITHUB_REPO}
+    AWS_CLOUDFRONT_DISTRIBUTION: ${env:AWS_CLOUDFRONT_DISTRIBUTION, ""}
+    REGEN_PUBLIC_CMD: ${env:REGEN_PUBLIC_CMD, ""}
+    GITHUB_WEBHOOK_SECRET: ${env:GITHUB_WEBHOOK_SECRET, ""}
+    GITHUB_USER_EMAIL: ${env:GIT_USER_EMAIL, "test@user.com"}
+    GITHUB_USER_NAME: ${env:GITHUB_USER_NAME, "Bot"}
+    GITHUB_COMMIT_MESSAGE: ${env:GITHUB_COMMIT_MESSAGE, "Updates"}
+    GITHUB_COMMIT_BRANCH: ${env:GITHUB_COMMIT_BRANCH, "master"}
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "s3:*"
+      Resource:
+        Fn::Join:
+          - ""
+          - - "arn:aws:s3:::"
+            - ${env:AWS_S3_BUCKET, 'sample-bucket'}
+    - Effect: "Allow"
+      Action:
+        - "s3:*"
+      Resource:
+        Fn::Join:
+          - ""
+          - - "arn:aws:s3:::"
+            - ${env:AWS_S3_BUCKET, 'sample-bucket'}
+            - "/*"
+
+package:
+  exclude:
+    - "node_modules/aws-sdk/**"
+    - "node_modules/aws-lambda/**"
+
+functions:
+  handlePost:
+    handler: src/index.handler
+    # https://github.com/lambci/git-lambda-layer
+    layers: arn:aws:lambda:eu-west-1:553035198032:layer:git-lambda2:4
+    events:
+      - http:
+          path: receive/
+          method: post
+          cors: true

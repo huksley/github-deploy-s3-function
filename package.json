@@ -1,19 +1,22 @@
 {
-  "name": "personal-website-webhook-lambda-deploy",
+  "name": "github-deploy-lambda",
   "version": "1.0.0",
-  "description": "Deploy azeemba.com using AWS Lambda via a github hook",
+  "description": "Serverless function to deploy GitHub repo when invoked as webhook from GitHub",
   "main": "index.js",
   "dependencies": {
-    "lodash": "^4.17.11",
-    "request": "^2.88.0",
-    "request-promise": "^4.2.2",
+    "aws-sdk": "^2.623.0",
+    "fetch": "^1.1.0",
+    "serverless": "^1.64.0",
+    "serverless-dotenv-plugin": "^2.3.2",
     "simple-git": "^1.107.0"
   },
-  "devDependencies": {},
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "deploy": "bash ./export.sh"
+  "devDependencies": {
+    "dotenv": "^8.2.0",
+    "prettier": "^1.19.1"
   },
-  "author": "",
+  "scripts": {
+    "deploy": "serverless deploy"
+  },
+  "author": "Ruslan Gainutdinov",
   "license": "MIT"
 }
