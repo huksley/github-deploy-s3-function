@@ -1,7 +1,7 @@
 {
-  "name": "github-deploy-lambda",
+  "name": "github-deploy-s3-function",
   "version": "1.0.0",
-  "description": "Serverless function to deploy GitHub repo when invoked as webhook from GitHub",
+  "description": "Serverless function to deploy GitHub repo to S3 when invoked as webhook from GitHub",
   "main": "index.js",
   "dependencies": {
     "mime-types": "^2.1.26",
@@ -19,6 +19,6 @@
   "scripts": {
     "deploy": "serverless deploy"
   },
-  "author": "Ruslan Gainutdinov",
+  "author": "Ruslan Gainutdinov <https://github.com/huksley>",
   "license": "MIT"
 }
