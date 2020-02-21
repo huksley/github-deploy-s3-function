@@ -1,3 +1,0 @@
-[submodule "git-lambda-layer"]
-	path = git-lambda-layer
-	url = https://github.com/lambci/git-lambda-layer

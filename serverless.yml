@@ -1,10 +1,13 @@
 service: github-deploy
 plugins:
   - serverless-dotenv-plugin
+  - serverless-stack-output
+  - ./serverless-existing-layer
 
-layers:
-  git-layer:
-    path: .git-layer
+# Write resulting function to the output
+custom:
+  output:
+    file: .serverless/output.json
 
 provider:
   name: aws
@@ -53,15 +56,12 @@ package:
   exclude:
     - "node_modules/aws-sdk/**"
     - "node_modules/aws-lambda/**"
-    - ".git-layer/**"
     - "git-lambda-layer/**"
 
 functions:
   handlePost:
     handler: index.handler
     # https://github.com/lambci/git-lambda-layer
-    layers: 
-      - git-layer
     events:
       - http:
           path: receive/
